@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Install wasm Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        components: clippy
+        target: wasm32-unknown-unknown
+
+    - name: Run clippy for native
+      run: cargo clippy --all-targets --all-features -- -D warnings -D missing-docs
+
+    - name: Run clippy for wasm32
+      run: cargo clippy --all-targets --all-features --target=wasm32-unknown-unknown -- -D warnings -D missing-docs
+
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Install toolchain
+      uses: dtolnay/rust-toolchain@nightly
+
+    - name: Run rustdoc check
+      env:
+        RUSTDOCFLAGS: --cfg docs_rs -D warnings
+      run: cargo +nightly doc
+
+
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Run fmt
+      run: cargo fmt -- --check
+
+
+  test-wasm:
+    runs-on: ubuntu-latest
+    env:
+      WASM_BINDGEN_TEST_TIMEOUT: 60
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: wasm32-unknown-unknown
+
+    - name: Install wasm-pack
+      uses: taiki-e/cache-cargo-install-action@v1
+      with:
+        tool: wasm-pack@0.12.1
+
+    - name: Install chromedriver # we don't specify chrome version to match whatever's installed
+      uses: nanasess/setup-chromedriver@v2
+
+    - name: Build (wasm32-unknown-unknown)
+      run: cargo build --target=wasm32-unknown-unknown --all-features
+
+    - name: Run tests
+      run: wasm-pack test --headless --chrome --all-features
+
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Set up cargo cache
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys:
+          cargo-${{ hashFiles('**/Cargo.lock') }}
+          cargo-
+
+    - name: Run tests
+      run: cargo test --all-features
+
+
+  unused-deps:
+    runs-on: ubuntu-latest
+    name: unused dependencies
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v3
+
+    - name: Install toolchain
+      uses: dtolnay/rust-toolchain@nightly
+
+    - name: Install cargo-udeps
+      uses: taiki-e/cache-cargo-install-action@v1
+      with:
+        tool: cargo-udeps@0.1
+
+    - name: Check for unused dependencies
+      run: cargo +nightly udeps --all-features --all-targets

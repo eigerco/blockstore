@@ -9,12 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0](https://github.com/eigerco/blockstore/compare/v0.1.1...v0.2.0) - 2024-03-25
 
 ### Added
-- *(blockstore)* add IndexedDb blockstore ([#221](https://github.com/eigerco/blockstore/pull/221))
-- feat!(blockstore): add sled blockstore ([#217](https://github.com/eigerco/blockstore/pull/217))
-- *(blockstore)* Implement LruBlockstore ([#207](https://github.com/eigerco/blockstore/pull/207))
+- *(blockstore)* add IndexedDb blockstore ([#221](https://github.com/eigerco/lumina/pull/221))
+- feat!(blockstore): add sled blockstore ([#217](https://github.com/eigerco/lumina/pull/217))
+- *(blockstore)* Implement LruBlockstore ([#207](https://github.com/eigerco/lumina/pull/207))
 
 ### Fixed
-- fix!(blockstore): remove an error if cid already exists ([#224](https://github.com/eigerco/blockstore/pull/224))
+- fix!(blockstore): remove an error if cid already exists ([#224](https://github.com/eigerco/lumina/pull/224))
 
 ### Other
 - *(ci)* add gitignore and CI workflows

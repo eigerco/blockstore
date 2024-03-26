@@ -67,7 +67,7 @@ pub trait Blockstore: Send + Sync {
     fn get<const S: usize>(
         &self,
         cid: &CidGeneric<S>,
-    ) -> impl Future<Output = Result<Option<Vec<u8>>>>;
+    ) -> impl Future<Output = Result<Option<Vec<u8>>>> + Send;
 
     /// Inserts the data with pre-computed CID.
     /// Use [`put`], if you want CID to be computed.
@@ -77,15 +77,18 @@ pub trait Blockstore: Send + Sync {
         &self,
         cid: &CidGeneric<S>,
         data: &[u8],
-    ) -> impl Future<Output = Result<()>>;
+    ) -> impl Future<Output = Result<()>> + Send;
 
     /// Checks whether blockstore has block for provided CID
-    fn has<const S: usize>(&self, cid: &CidGeneric<S>) -> impl Future<Output = Result<bool>> {
+    fn has<const S: usize>(
+        &self,
+        cid: &CidGeneric<S>,
+    ) -> impl Future<Output = Result<bool>> + Send {
         async { Ok(self.get(cid).await?.is_some()) }
     }
 
     /// Inserts the data into the blockstore, computing CID using [`Block`] trait.
-    fn put<const S: usize, B>(&self, block: B) -> impl Future<Output = Result<()>>
+    fn put<const S: usize, B>(&self, block: B) -> impl Future<Output = Result<()>> + Send
     where
         B: Block<S>,
     {
@@ -98,7 +101,7 @@ pub trait Blockstore: Send + Sync {
     /// Inserts multiple blocks into the blockstore computing their CID
     /// If CID computation, or insert itself fails, error is returned and subsequent items are also
     /// skipped.
-    fn put_many<const S: usize, B, I>(&self, blocks: I) -> impl Future<Output = Result<()>>
+    fn put_many<const S: usize, B, I>(&self, blocks: I) -> impl Future<Output = Result<()>> + Send
     where
         B: Block<S>,
         I: IntoIterator<Item = B> + Send,
@@ -115,7 +118,10 @@ pub trait Blockstore: Send + Sync {
 
     /// Inserts multiple blocks with pre-computed CID into the blockstore.
     /// If any put from the list fails, error is returned and subsequent items are also skipped.
-    fn put_many_keyed<const S: usize, D, I>(&self, blocks: I) -> impl Future<Output = Result<()>>
+    fn put_many_keyed<const S: usize, D, I>(
+        &self,
+        blocks: I,
+    ) -> impl Future<Output = Result<()>> + Send
     where
         D: AsRef<[u8]> + Send + Sync,
         I: IntoIterator<Item = (CidGeneric<S>, D)> + Send,

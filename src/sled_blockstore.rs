@@ -76,7 +76,6 @@ impl SledBlockstore {
     }
 }
 
-#[cfg_attr(not(docs_rs), async_trait::async_trait)]
 impl Blockstore for SledBlockstore {
     async fn get<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<Option<Vec<u8>>> {
         self.get(cid).await

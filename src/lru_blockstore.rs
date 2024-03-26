@@ -19,7 +19,6 @@ impl<const MAX_MULTIHASH_SIZE: usize> LruBlockstore<MAX_MULTIHASH_SIZE> {
     }
 }
 
-#[cfg_attr(not(docs_rs), async_trait::async_trait)]
 impl<const MAX_MULTIHASH_SIZE: usize> Blockstore for LruBlockstore<MAX_MULTIHASH_SIZE> {
     async fn get<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<Option<Vec<u8>>> {
         let cid = convert_cid(cid)?;

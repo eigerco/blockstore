@@ -1,6 +1,8 @@
 #![cfg_attr(docs_rs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
 
+use std::future::Future;
+
 use cid::CidGeneric;
 use multihash::Multihash;
 use thiserror::Error;
@@ -60,59 +62,71 @@ type Result<T, E = BlockstoreError> = std::result::Result<T, E>;
 /// will fail with [`CidTooLong`].
 ///
 /// [`CidTooLong`]: BlockstoreError::CidTooLong
-#[cfg_attr(not(docs_rs), async_trait::async_trait)]
 pub trait Blockstore: Send + Sync {
     /// Gets the block from the blockstore
-    async fn get<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<Option<Vec<u8>>>;
+    fn get<const S: usize>(
+        &self,
+        cid: &CidGeneric<S>,
+    ) -> impl Future<Output = Result<Option<Vec<u8>>>>;
 
     /// Inserts the data with pre-computed CID.
     /// Use [`put`], if you want CID to be computed.
     ///
     /// [`put`]: Blockstore::put
-    async fn put_keyed<const S: usize>(&self, cid: &CidGeneric<S>, data: &[u8]) -> Result<()>;
+    fn put_keyed<const S: usize>(
+        &self,
+        cid: &CidGeneric<S>,
+        data: &[u8],
+    ) -> impl Future<Output = Result<()>>;
 
     /// Checks whether blockstore has block for provided CID
-    async fn has<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<bool> {
-        Ok(self.get(cid).await?.is_some())
+    fn has<const S: usize>(&self, cid: &CidGeneric<S>) -> impl Future<Output = Result<bool>> {
+        async { Ok(self.get(cid).await?.is_some()) }
     }
 
     /// Inserts the data into the blockstore, computing CID using [`Block`] trait.
-    async fn put<const S: usize, B>(&self, block: B) -> Result<()>
+    fn put<const S: usize, B>(&self, block: B) -> impl Future<Output = Result<()>>
     where
         B: Block<S>,
     {
-        let cid = block.cid()?;
-        self.put_keyed(&cid, block.data()).await
+        async move {
+            let cid = block.cid()?;
+            self.put_keyed(&cid, block.data()).await
+        }
     }
 
     /// Inserts multiple blocks into the blockstore computing their CID
     /// If CID computation, or insert itself fails, error is returned and subsequent items are also
     /// skipped.
-    async fn put_many<const S: usize, B, I>(&self, blocks: I) -> Result<()>
+    fn put_many<const S: usize, B, I>(&self, blocks: I) -> impl Future<Output = Result<()>>
     where
         B: Block<S>,
         I: IntoIterator<Item = B> + Send,
         <I as IntoIterator>::IntoIter: Send,
     {
-        for b in blocks {
-            let cid = b.cid()?;
-            self.put_keyed(&cid, b.data()).await?;
+        async move {
+            for b in blocks {
+                let cid = b.cid()?;
+                self.put_keyed(&cid, b.data()).await?;
+            }
+            Ok(())
         }
-        Ok(())
     }
 
     /// Inserts multiple blocks with pre-computed CID into the blockstore.
     /// If any put from the list fails, error is returned and subsequent items are also skipped.
-    async fn put_many_keyed<const S: usize, D, I>(&self, blocks: I) -> Result<()>
+    fn put_many_keyed<const S: usize, D, I>(&self, blocks: I) -> impl Future<Output = Result<()>>
     where
         D: AsRef<[u8]> + Send + Sync,
         I: IntoIterator<Item = (CidGeneric<S>, D)> + Send,
         <I as IntoIterator>::IntoIter: Send,
     {
-        for (cid, block) in blocks {
-            self.put_keyed(&cid, block.as_ref()).await?;
+        async move {
+            for (cid, block) in blocks {
+                self.put_keyed(&cid, block.as_ref()).await?;
+            }
+            Ok(())
         }
-        Ok(())
     }
 }
 

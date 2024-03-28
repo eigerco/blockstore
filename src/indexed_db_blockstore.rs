@@ -94,7 +94,6 @@ impl IndexedDbBlockstore {
     }
 }
 
-#[cfg_attr(not(docs_rs), async_trait::async_trait)]
 impl Blockstore for IndexedDbBlockstore {
     async fn get<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<Option<Vec<u8>>> {
         let fut = SendWrapper::new(self.get(cid));

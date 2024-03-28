@@ -4,6 +4,7 @@
 use std::future::Future;
 
 use cid::CidGeneric;
+use cond_send::{CondSend, CondSync};
 use multihash::Multihash;
 use thiserror::Error;
 
@@ -11,6 +12,7 @@ use crate::block::{Block, CidError};
 
 /// Utilities related to computing CID for the inserted data
 pub mod block;
+pub mod cond_send;
 mod in_memory_blockstore;
 #[cfg(all(target_arch = "wasm32", feature = "indexeddb"))]
 mod indexed_db_blockstore;
@@ -62,12 +64,12 @@ type Result<T, E = BlockstoreError> = std::result::Result<T, E>;
 /// will fail with [`CidTooLong`].
 ///
 /// [`CidTooLong`]: BlockstoreError::CidTooLong
-pub trait Blockstore: Send + Sync {
+pub trait Blockstore: CondSync {
     /// Gets the block from the blockstore
     fn get<const S: usize>(
         &self,
         cid: &CidGeneric<S>,
-    ) -> impl Future<Output = Result<Option<Vec<u8>>>> + Send;
+    ) -> impl Future<Output = Result<Option<Vec<u8>>>> + CondSend;
 
     /// Inserts the data with pre-computed CID.
     /// Use [`put`], if you want CID to be computed.
@@ -77,18 +79,18 @@ pub trait Blockstore: Send + Sync {
         &self,
         cid: &CidGeneric<S>,
         data: &[u8],
-    ) -> impl Future<Output = Result<()>> + Send;
+    ) -> impl Future<Output = Result<()>> + CondSend;
 
     /// Checks whether blockstore has block for provided CID
     fn has<const S: usize>(
         &self,
         cid: &CidGeneric<S>,
-    ) -> impl Future<Output = Result<bool>> + Send {
+    ) -> impl Future<Output = Result<bool>> + CondSend {
         async { Ok(self.get(cid).await?.is_some()) }
     }
 
     /// Inserts the data into the blockstore, computing CID using [`Block`] trait.
-    fn put<const S: usize, B>(&self, block: B) -> impl Future<Output = Result<()>> + Send
+    fn put<const S: usize, B>(&self, block: B) -> impl Future<Output = Result<()>> + CondSend
     where
         B: Block<S>,
     {
@@ -101,10 +103,13 @@ pub trait Blockstore: Send + Sync {
     /// Inserts multiple blocks into the blockstore computing their CID
     /// If CID computation, or insert itself fails, error is returned and subsequent items are also
     /// skipped.
-    fn put_many<const S: usize, B, I>(&self, blocks: I) -> impl Future<Output = Result<()>> + Send
+    fn put_many<const S: usize, B, I>(
+        &self,
+        blocks: I,
+    ) -> impl Future<Output = Result<()>> + CondSend
     where
         B: Block<S>,
-        I: IntoIterator<Item = B> + Send,
+        I: IntoIterator<Item = B> + CondSend,
         <I as IntoIterator>::IntoIter: Send,
     {
         async move {
@@ -121,10 +126,10 @@ pub trait Blockstore: Send + Sync {
     fn put_many_keyed<const S: usize, D, I>(
         &self,
         blocks: I,
-    ) -> impl Future<Output = Result<()>> + Send
+    ) -> impl Future<Output = Result<()>> + CondSend
     where
-        D: AsRef<[u8]> + Send + Sync,
-        I: IntoIterator<Item = (CidGeneric<S>, D)> + Send,
+        D: AsRef<[u8]> + CondSync,
+        I: IntoIterator<Item = (CidGeneric<S>, D)> + CondSend,
         <I as IntoIterator>::IntoIter: Send,
     {
         async move {

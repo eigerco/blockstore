@@ -1,7 +1,6 @@
 use cid::CidGeneric;
 use js_sys::Uint8Array;
 use rexie::{KeyRange, ObjectStore, Rexie, Store, TransactionMode};
-use send_wrapper::SendWrapper;
 use wasm_bindgen::{JsCast, JsValue};
 
 use crate::{Blockstore, BlockstoreError, Result};
@@ -14,7 +13,7 @@ const BLOCK_STORE: &str = "BLOCKSTORE.BLOCKS";
 /// A [`Blockstore`] implementation backed by an `IndexedDb` database.
 #[derive(Debug)]
 pub struct IndexedDbBlockstore {
-    db: SendWrapper<Rexie>,
+    db: Rexie,
 }
 
 impl IndexedDbBlockstore {
@@ -30,18 +29,18 @@ impl IndexedDbBlockstore {
     /// # }
     /// ```
     pub async fn new(name: &str) -> Result<Self> {
-        let rexie = Rexie::builder(name)
+        let db = Rexie::builder(name)
             .version(DB_VERSION)
             .add_object_store(ObjectStore::new(BLOCK_STORE).auto_increment(false))
             .build()
             .await
             .map_err(|e| BlockstoreError::BackingStoreError(e.to_string()))?;
 
-        Ok(Self {
-            db: SendWrapper::new(rexie),
-        })
+        Ok(Self { db })
     }
+}
 
+impl Blockstore for IndexedDbBlockstore {
     async fn get<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<Option<Vec<u8>>> {
         let cid = Uint8Array::from(cid.to_bytes().as_ref());
 
@@ -67,7 +66,7 @@ impl IndexedDbBlockstore {
         }
     }
 
-    async fn put<const S: usize>(&self, cid: &CidGeneric<S>, data: &[u8]) -> Result<()> {
+    async fn put_keyed<const S: usize>(&self, cid: &CidGeneric<S>, data: &[u8]) -> Result<()> {
         let cid = Uint8Array::from(cid.to_bytes().as_ref());
         let data = Uint8Array::from(data);
 
@@ -91,23 +90,6 @@ impl IndexedDbBlockstore {
         let blocks = tx.store(BLOCK_STORE)?;
 
         has_key(&blocks, &cid).await
-    }
-}
-
-impl Blockstore for IndexedDbBlockstore {
-    async fn get<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<Option<Vec<u8>>> {
-        let fut = SendWrapper::new(self.get(cid));
-        fut.await
-    }
-
-    async fn put_keyed<const S: usize>(&self, cid: &CidGeneric<S>, data: &[u8]) -> Result<()> {
-        let fut = SendWrapper::new(self.put(cid, data));
-        fut.await
-    }
-
-    async fn has<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<bool> {
-        let fut = SendWrapper::new(self.has(cid));
-        fut.await
     }
 }
 
@@ -144,7 +126,7 @@ mod tests {
 
         store.put_keyed(&cid, data).await.unwrap();
 
-        store.db.take().close();
+        store.db.close();
 
         let store = IndexedDbBlockstore::new(store_name).await.unwrap();
         let received = store.get(&cid).await.unwrap();

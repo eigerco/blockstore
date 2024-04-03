@@ -4,11 +4,11 @@
 use std::future::Future;
 
 use cid::CidGeneric;
-use cond_send::{CondSend, CondSync};
 use multihash::Multihash;
 use thiserror::Error;
 
 use crate::block::{Block, CidError};
+use crate::cond_send::{CondSend, CondSync};
 
 /// Utilities related to computing CID for the inserted data
 pub mod block;

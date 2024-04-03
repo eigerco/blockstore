@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.1](https://github.com/eigerco/blockstore/compare/v0.3.0...v0.3.1) - 2024-04-03
+## [0.4.0](https://github.com/eigerco/blockstore/compare/v0.3.0...v0.4.0) - 2024-04-03
 
 ### Other
 - Conditionally compile `Send` bounds instead of `SendWrapper` ([#8](https://github.com/eigerco/blockstore/pull/8))

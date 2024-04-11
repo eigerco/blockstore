@@ -34,7 +34,7 @@ impl IndexedDbBlockstore {
             .add_object_store(ObjectStore::new(BLOCK_STORE).auto_increment(false))
             .build()
             .await
-            .map_err(|e| BlockstoreError::BackingStoreError(e.to_string()))?;
+            .map_err(|e| BlockstoreError::FatalDatabaseError(e.to_string()))?;
 
         Ok(Self { db })
     }
@@ -54,7 +54,7 @@ impl Blockstore for IndexedDbBlockstore {
             Ok(None)
         } else {
             let arr = block.dyn_ref::<Uint8Array>().ok_or_else(|| {
-                BlockstoreError::StorageCorrupted(format!(
+                BlockstoreError::StoredDataError(format!(
                     "expected 'Uint8Array', got '{}'",
                     block
                         .js_typeof()
@@ -95,7 +95,7 @@ impl Blockstore for IndexedDbBlockstore {
 
 impl From<rexie::Error> for BlockstoreError {
     fn from(value: rexie::Error) -> Self {
-        BlockstoreError::BackingStoreError(value.to_string())
+        BlockstoreError::FatalDatabaseError(value.to_string())
     }
 }
 

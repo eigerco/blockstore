@@ -1,10 +1,8 @@
-use std::io;
 use std::sync::Arc;
 
 use cid::CidGeneric;
 use sled::{Db, Error as SledError, Tree};
 use tokio::task::spawn_blocking;
-use tokio::task::JoinError;
 
 use crate::{Blockstore, BlockstoreError, Result};
 
@@ -94,20 +92,12 @@ impl Blockstore for SledBlockstore {
 impl From<SledError> for BlockstoreError {
     fn from(error: SledError) -> BlockstoreError {
         match error {
-            e @ SledError::CollectionNotFound(_) | e @ SledError::Corruption { .. } => {
-                BlockstoreError::StorageCorrupted(e.to_string())
-            }
-            e @ SledError::Unsupported(_) | e @ SledError::ReportableBug(_) => {
-                BlockstoreError::BackingStoreError(e.to_string())
-            }
-            SledError::Io(e) => e.into(),
+            e @ SledError::CollectionNotFound(_) => BlockstoreError::StoredDataError(e.to_string()),
+            e @ SledError::Unsupported(_)
+            | e @ SledError::ReportableBug(_)
+            | e @ SledError::Corruption { .. }
+            | e @ SledError::Io(_) => BlockstoreError::FatalDatabaseError(e.to_string()),
         }
-    }
-}
-
-impl From<JoinError> for BlockstoreError {
-    fn from(error: JoinError) -> BlockstoreError {
-        io::Error::from(error).into()
     }
 }
 

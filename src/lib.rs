@@ -43,20 +43,27 @@ pub enum BlockstoreError {
     #[error("Error generating CID: {0}")]
     CidError(#[from] CidError),
 
-    /// An error propagated from the IO operation.
-    #[error("Received io error from persistent storage: {0}")]
-    IoError(#[from] std::io::Error),
+    /// An error propagated from the async executor.
+    #[error("Received error from executor: {0}")]
+    ExecutorError(String),
 
-    /// Storage corrupted. Try reseting the blockstore.
+    /// Stored data in inconsistent state.
     #[error("Stored data in inconsistent state, try reseting the store: {0}")]
-    StorageCorrupted(String),
+    StoredDataError(String),
 
-    /// Unrecoverable error reported by the backing store.
-    #[error("Persistent storage reported unrecoverable error: {0}")]
-    BackingStoreError(String),
+    /// Unrecoverable error reported by the database.
+    #[error("Database reported unrecoverable error: {0}")]
+    FatalDatabaseError(String),
 }
 
 type Result<T, E = BlockstoreError> = std::result::Result<T, E>;
+
+#[cfg(all(not(target_arch = "wasm32"), feature = "sled"))]
+impl From<tokio::task::JoinError> for BlockstoreError {
+    fn from(e: tokio::task::JoinError) -> BlockstoreError {
+        BlockstoreError::ExecutorError(e.to_string())
+    }
+}
 
 /// An IPLD blockstore capable of holding arbitrary data indexed by CID.
 ///

@@ -35,9 +35,9 @@ pub use crate::sled_blockstore::SledBlockstore;
 /// Error returned when performing operations on [`Blockstore`]
 #[derive(Debug, Error)]
 pub enum BlockstoreError {
-    /// Provided CID is longer than max length supported by the blockstore
-    #[error("CID length longer that max allowed by the store")]
-    CidTooLong,
+    /// Provided CID is larger than max length supported by the blockstore
+    #[error("CID length larger that max allowed by the store")]
+    CidTooLarge,
 
     /// Error occured when trying to compute CID.
     #[error("Error generating CID: {0}")]
@@ -68,9 +68,9 @@ impl From<tokio::task::JoinError> for BlockstoreError {
 /// An IPLD blockstore capable of holding arbitrary data indexed by CID.
 ///
 /// Implementations can impose limit on supported CID length, and any operations on longer CIDs
-/// will fail with [`CidTooLong`].
+/// will fail with [`CidTooLarge`].
 ///
-/// [`CidTooLong`]: BlockstoreError::CidTooLong
+/// [`CidTooLarge`]: BlockstoreError::CidTooLarge
 pub trait Blockstore: CondSync {
     /// Gets the block from the blockstore
     fn get<const S: usize>(
@@ -152,7 +152,7 @@ pub(crate) fn convert_cid<const S: usize, const NEW_S: usize>(
     cid: &CidGeneric<S>,
 ) -> Result<CidGeneric<NEW_S>> {
     let hash = Multihash::<NEW_S>::wrap(cid.hash().code(), cid.hash().digest())
-        .map_err(|_| BlockstoreError::CidTooLong)?;
+        .map_err(|_| BlockstoreError::CidTooLarge)?;
 
     // Safe to unwrap because check was done from previous construction.
     let cid = CidGeneric::new(cid.version(), cid.codec(), hash).expect("malformed cid");
@@ -269,15 +269,15 @@ pub(crate) mod tests {
 
         store.put_keyed(&small_cid, b"1").await.unwrap();
         let put_err = store.put_keyed(&big_cid, b"1").await.unwrap_err();
-        assert!(matches!(put_err, BlockstoreError::CidTooLong));
+        assert!(matches!(put_err, BlockstoreError::CidTooLarge));
 
         store.get(&small_cid).await.unwrap();
         let get_err = store.get(&big_cid).await.unwrap_err();
-        assert!(matches!(get_err, BlockstoreError::CidTooLong));
+        assert!(matches!(get_err, BlockstoreError::CidTooLarge));
 
         store.has(&small_cid).await.unwrap();
         let has_err = store.has(&big_cid).await.unwrap_err();
-        assert!(matches!(has_err, BlockstoreError::CidTooLong));
+        assert!(matches!(has_err, BlockstoreError::CidTooLarge));
     }
 
     #[rstest]

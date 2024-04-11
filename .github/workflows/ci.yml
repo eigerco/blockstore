@@ -81,6 +81,11 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
+    - name: Install cargo-hack
+      uses: taiki-e/cache-cargo-install-action@v1
+      with:
+        tool: cargo-hack
+
     - name: Set up cargo cache
       uses: actions/cache@v3
       with:
@@ -95,8 +100,11 @@ jobs:
           cargo-${{ hashFiles('**/Cargo.lock') }}
           cargo-
 
+    - name: Build (native)
+      run: cargo hack build --feature-powerset --no-dev-deps --exclude-features indexeddb
+
     - name: Run tests
-      run: cargo test --all-features
+      run: cargo hack test --each-feature --exclude-features indexeddb
 
 
   unused-deps:

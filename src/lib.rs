@@ -18,6 +18,8 @@ mod in_memory_blockstore;
 mod indexed_db_blockstore;
 #[cfg(feature = "lru")]
 mod lru_blockstore;
+#[cfg(all(not(target_arch = "wasm32"), feature = "redb"))]
+mod redb_blockstore;
 #[cfg(all(not(target_arch = "wasm32"), feature = "sled"))]
 mod sled_blockstore;
 
@@ -28,6 +30,9 @@ pub use crate::indexed_db_blockstore::IndexedDbBlockstore;
 #[cfg(feature = "lru")]
 #[cfg_attr(docs_rs, doc(cfg(feature = "lru")))]
 pub use crate::lru_blockstore::LruBlockstore;
+#[cfg(all(not(target_arch = "wasm32"), feature = "redb"))]
+#[cfg_attr(docs_rs, doc(cfg(all(not(target_arch = "wasm32"), feature = "redb"))))]
+pub use crate::redb_blockstore::RedbBlockstore;
 #[cfg(all(not(target_arch = "wasm32"), feature = "sled"))]
 #[cfg_attr(docs_rs, doc(cfg(all(not(target_arch = "wasm32"), feature = "sled"))))]
 pub use crate::sled_blockstore::SledBlockstore;
@@ -62,7 +67,7 @@ pub enum BlockstoreError {
 
 type Result<T, E = BlockstoreError> = std::result::Result<T, E>;
 
-#[cfg(all(not(target_arch = "wasm32"), feature = "sled"))]
+#[cfg(all(not(target_arch = "wasm32"), any(feature = "sled", feature = "redb")))]
 impl From<tokio::task::JoinError> for BlockstoreError {
     fn from(e: tokio::task::JoinError) -> BlockstoreError {
         BlockstoreError::ExecutorError(e.to_string())
@@ -182,6 +187,7 @@ pub(crate) mod tests {
     #[rstest]
     #[case(new_in_memory::<64>())]
     #[cfg_attr(feature = "lru", case(new_lru::<64>()))]
+    #[cfg_attr(all(not(target_arch = "wasm32"), feature = "redb"), case(new_redb()))]
     #[cfg_attr(all(not(target_arch = "wasm32"), feature = "sled"), case(new_sled()))]
     #[cfg_attr(
         all(target_arch = "wasm32", feature = "indexeddb"),
@@ -210,6 +216,7 @@ pub(crate) mod tests {
     #[rstest]
     #[case(new_in_memory::<64>())]
     #[cfg_attr(feature = "lru", case(new_lru::<64>()))]
+    #[cfg_attr(all(not(target_arch = "wasm32"), feature = "redb"), case(new_redb()))]
     #[cfg_attr(all(not(target_arch = "wasm32"), feature = "sled"), case(new_sled()))]
     #[cfg_attr(
         all(target_arch = "wasm32", feature = "indexeddb"),
@@ -233,6 +240,7 @@ pub(crate) mod tests {
     #[rstest]
     #[case(new_in_memory::<128>())]
     #[cfg_attr(feature = "lru", case(new_lru::<128>()))]
+    #[cfg_attr(all(not(target_arch = "wasm32"), feature = "redb"), case(new_redb()))]
     #[cfg_attr(all(not(target_arch = "wasm32"), feature = "sled"), case(new_sled()))]
     #[cfg_attr(
         all(target_arch = "wasm32", feature = "indexeddb"),
@@ -287,6 +295,7 @@ pub(crate) mod tests {
     #[rstest]
     #[case(new_in_memory::<8>())]
     #[cfg_attr(feature = "lru", case(new_lru::<8>()))]
+    #[cfg_attr(all(not(target_arch = "wasm32"), feature = "redb"), case(new_redb()))]
     #[cfg_attr(all(not(target_arch = "wasm32"), feature = "sled"), case(new_sled()))]
     #[cfg_attr(
         all(target_arch = "wasm32", feature = "indexeddb"),
@@ -308,6 +317,7 @@ pub(crate) mod tests {
     #[rstest]
     #[case(new_in_memory::<8>())]
     #[cfg_attr(feature = "lru", case(new_lru::<8>()))]
+    #[cfg_attr(all(not(target_arch = "wasm32"), feature = "redb"), case(new_redb()))]
     #[cfg_attr(all(not(target_arch = "wasm32"), feature = "sled"), case(new_sled()))]
     #[cfg_attr(
         all(target_arch = "wasm32", feature = "indexeddb"),
@@ -355,6 +365,7 @@ pub(crate) mod tests {
     #[rstest]
     #[case(new_in_memory::<8>())]
     #[cfg_attr(feature = "lru", case(new_lru::<8>()))]
+    #[cfg_attr(all(not(target_arch = "wasm32"), feature = "redb"), case(new_redb()))]
     #[cfg_attr(all(not(target_arch = "wasm32"), feature = "sled"), case(new_sled()))]
     #[cfg_attr(
         all(target_arch = "wasm32", feature = "indexeddb"),
@@ -391,6 +402,11 @@ pub(crate) mod tests {
     #[cfg(feature = "lru")]
     async fn new_lru<const S: usize>() -> LruBlockstore<S> {
         LruBlockstore::new(std::num::NonZeroUsize::new(128).unwrap())
+    }
+
+    #[cfg(all(not(target_arch = "wasm32"), feature = "redb"))]
+    async fn new_redb() -> RedbBlockstore {
+        RedbBlockstore::in_memory().unwrap()
     }
 
     #[cfg(all(not(target_arch = "wasm32"), feature = "sled"))]

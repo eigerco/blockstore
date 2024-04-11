@@ -39,6 +39,10 @@ pub enum BlockstoreError {
     #[error("CID length larger that max allowed by the store")]
     CidTooLarge,
 
+    /// Provided value is too large and database can not handle it
+    #[error("Value is too large and database can not handle it")]
+    ValueTooLarge,
+
     /// Error occured when trying to compute CID.
     #[error("Error generating CID: {0}")]
     CidError(#[from] CidError),

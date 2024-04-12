@@ -40,7 +40,7 @@ impl RedbBlockstore {
         Ok(RedbBlockstore::new(Arc::new(db)))
     }
 
-    /// Create new `RedbBlockstore` with an already opened [`redb::Database`].
+    /// Create a new `RedbBlockstore` with the already opened [`redb::Database`].
     ///
     /// # Example
     /// ```

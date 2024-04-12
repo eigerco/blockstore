@@ -84,7 +84,7 @@ impl RedbBlockstore {
 
     /// Execute a write transaction.
     ///
-    /// If closure returns an error the transaction is aborted, otherwise commited.
+    /// If closure returns an error the store state is not changed, otherwise transaction is commited.
     async fn write_tx<F, T>(&self, f: F) -> Result<T>
     where
         F: FnOnce(&mut WriteTransaction) -> Result<T> + Send + 'static,

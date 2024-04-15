@@ -4,7 +4,7 @@ use cid::CidGeneric;
 use sled::{Db, Error as SledError, Tree};
 use tokio::task::spawn_blocking;
 
-use crate::{Blockstore, BlockstoreError, Result};
+use crate::{Blockstore, Error, Result};
 
 const BLOCKS_TREE_ID: &[u8] = b"BLOCKSTORE.BLOCKS";
 
@@ -89,14 +89,14 @@ impl Blockstore for SledBlockstore {
 }
 
 // divide errors into recoverable and not avoiding directly relying on passing sled types
-impl From<SledError> for BlockstoreError {
-    fn from(error: SledError) -> BlockstoreError {
+impl From<SledError> for Error {
+    fn from(error: SledError) -> Error {
         match error {
-            e @ SledError::CollectionNotFound(_) => BlockstoreError::StoredDataError(e.to_string()),
+            e @ SledError::CollectionNotFound(_) => Error::StoredDataError(e.to_string()),
             e @ SledError::Unsupported(_)
             | e @ SledError::ReportableBug(_)
             | e @ SledError::Corruption { .. }
-            | e @ SledError::Io(_) => BlockstoreError::FatalDatabaseError(e.to_string()),
+            | e @ SledError::Io(_) => Error::FatalDatabaseError(e.to_string()),
         }
     }
 }

@@ -3,7 +3,7 @@ use js_sys::Uint8Array;
 use rexie::{KeyRange, ObjectStore, Rexie, Store, TransactionMode};
 use wasm_bindgen::{JsCast, JsValue};
 
-use crate::{Blockstore, BlockstoreError, Result};
+use crate::{Blockstore, Error, Result};
 
 /// indexeddb version, needs to be incremented on every schema change
 const DB_VERSION: u32 = 1;
@@ -36,7 +36,7 @@ impl IndexedDbBlockstore {
             .add_object_store(ObjectStore::new(BLOCK_STORE).auto_increment(false))
             .build()
             .await
-            .map_err(|e| BlockstoreError::FatalDatabaseError(e.to_string()))?;
+            .map_err(|e| Error::FatalDatabaseError(e.to_string()))?;
 
         Ok(Self { db })
     }
@@ -56,7 +56,7 @@ impl Blockstore for IndexedDbBlockstore {
             Ok(None)
         } else {
             let arr = block.dyn_ref::<Uint8Array>().ok_or_else(|| {
-                BlockstoreError::StoredDataError(format!(
+                Error::StoredDataError(format!(
                     "expected 'Uint8Array', got '{}'",
                     block
                         .js_typeof()
@@ -95,9 +95,9 @@ impl Blockstore for IndexedDbBlockstore {
     }
 }
 
-impl From<rexie::Error> for BlockstoreError {
+impl From<rexie::Error> for Error {
     fn from(value: rexie::Error) -> Self {
-        BlockstoreError::FatalDatabaseError(value.to_string())
+        Error::FatalDatabaseError(value.to_string())
     }
 }
 

@@ -5,7 +5,6 @@ use std::future::Future;
 
 use cid::CidGeneric;
 use multihash::Multihash;
-use thiserror::Error;
 
 use crate::block::{Block, CidError};
 use crate::cond_send::{CondSend, CondSync};
@@ -38,8 +37,8 @@ pub use crate::redb_blockstore::RedbBlockstore;
 pub use crate::sled_blockstore::SledBlockstore;
 
 /// Error returned when performing operations on [`Blockstore`]
-#[derive(Debug, Error)]
-pub enum BlockstoreError {
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
     /// Provided CID is larger than max length supported by the blockstore
     #[error("CID length larger that max allowed by the store")]
     CidTooLarge,
@@ -65,12 +64,15 @@ pub enum BlockstoreError {
     FatalDatabaseError(String),
 }
 
-type Result<T, E = BlockstoreError> = std::result::Result<T, E>;
+/// Alias for a [`Result`] with the error type [`blockstore::Error`].
+///
+/// [`blockstore::Error`]: crate::Error
+pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[cfg(all(not(target_arch = "wasm32"), any(feature = "sled", feature = "redb")))]
-impl From<tokio::task::JoinError> for BlockstoreError {
-    fn from(e: tokio::task::JoinError) -> BlockstoreError {
-        BlockstoreError::ExecutorError(e.to_string())
+impl From<tokio::task::JoinError> for Error {
+    fn from(e: tokio::task::JoinError) -> Error {
+        Error::ExecutorError(e.to_string())
     }
 }
 
@@ -79,7 +81,7 @@ impl From<tokio::task::JoinError> for BlockstoreError {
 /// Implementations can impose limit on supported CID length, and any operations on longer CIDs
 /// will fail with [`CidTooLarge`].
 ///
-/// [`CidTooLarge`]: BlockstoreError::CidTooLarge
+/// [`CidTooLarge`]: Error::CidTooLarge
 pub trait Blockstore: CondSync {
     /// Gets the block from the blockstore
     fn get<const S: usize>(
@@ -161,7 +163,7 @@ pub(crate) fn convert_cid<const S: usize, const NEW_S: usize>(
     cid: &CidGeneric<S>,
 ) -> Result<CidGeneric<NEW_S>> {
     let hash = Multihash::<NEW_S>::wrap(cid.hash().code(), cid.hash().digest())
-        .map_err(|_| BlockstoreError::CidTooLarge)?;
+        .map_err(|_| Error::CidTooLarge)?;
 
     // Safe to unwrap because check was done from previous construction.
     let cid = CidGeneric::new(cid.version(), cid.codec(), hash).expect("malformed cid");
@@ -281,15 +283,15 @@ pub(crate) mod tests {
 
         store.put_keyed(&small_cid, b"1").await.unwrap();
         let put_err = store.put_keyed(&big_cid, b"1").await.unwrap_err();
-        assert!(matches!(put_err, BlockstoreError::CidTooLarge));
+        assert!(matches!(put_err, Error::CidTooLarge));
 
         store.get(&small_cid).await.unwrap();
         let get_err = store.get(&big_cid).await.unwrap_err();
-        assert!(matches!(get_err, BlockstoreError::CidTooLarge));
+        assert!(matches!(get_err, Error::CidTooLarge));
 
         store.has(&small_cid).await.unwrap();
         let has_err = store.has(&big_cid).await.unwrap_err();
-        assert!(matches!(has_err, BlockstoreError::CidTooLarge));
+        assert!(matches!(has_err, Error::CidTooLarge));
     }
 
     #[rstest]

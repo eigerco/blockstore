@@ -8,7 +8,7 @@ use redb::{
 };
 use tokio::task::spawn_blocking;
 
-use crate::{Blockstore, BlockstoreError, Result};
+use crate::{Blockstore, Error, Result};
 
 const BLOCKS_TABLE: TableDefinition<'static, &[u8], &[u8]> =
     TableDefinition::new("BLOCKSTORE.BLOCKS");
@@ -26,7 +26,7 @@ impl RedbBlockstore {
 
         let db = spawn_blocking(|| Database::create(path))
             .await?
-            .map_err(|e| BlockstoreError::FatalDatabaseError(e.to_string()))?;
+            .map_err(|e| Error::FatalDatabaseError(e.to_string()))?;
 
         Ok(RedbBlockstore::new(Arc::new(db)))
     }
@@ -35,7 +35,7 @@ impl RedbBlockstore {
     pub fn in_memory() -> Result<Self> {
         let db = Database::builder()
             .create_with_backend(redb::backends::InMemoryBackend::new())
-            .map_err(|e| BlockstoreError::FatalDatabaseError(e.to_string()))?;
+            .map_err(|e| Error::FatalDatabaseError(e.to_string()))?;
 
         Ok(RedbBlockstore::new(Arc::new(db)))
     }
@@ -158,18 +158,18 @@ impl Blockstore for RedbBlockstore {
     }
 }
 
-impl From<TransactionError> for BlockstoreError {
+impl From<TransactionError> for Error {
     fn from(e: TransactionError) -> Self {
         match e {
             TransactionError::ReadTransactionStillInUse(_) => {
                 unreachable!("redb::ReadTransaction::close is never used")
             }
-            e => BlockstoreError::FatalDatabaseError(e.to_string()),
+            e => Error::FatalDatabaseError(e.to_string()),
         }
     }
 }
 
-impl From<TableError> for BlockstoreError {
+impl From<TableError> for Error {
     fn from(e: TableError) -> Self {
         match e {
             TableError::Storage(e) => e.into(),
@@ -179,23 +179,23 @@ impl From<TableError> for BlockstoreError {
             e @ TableError::TableDoesNotExist(_) => {
                 unreachable!("redb::ReadTransaction::open_table result not handled correctly: {e}");
             }
-            e => BlockstoreError::StoredDataError(e.to_string()),
+            e => Error::StoredDataError(e.to_string()),
         }
     }
 }
 
-impl From<StorageError> for BlockstoreError {
+impl From<StorageError> for Error {
     fn from(e: StorageError) -> Self {
         match e {
-            StorageError::ValueTooLarge(_) => BlockstoreError::ValueTooLarge,
-            e => BlockstoreError::FatalDatabaseError(e.to_string()),
+            StorageError::ValueTooLarge(_) => Error::ValueTooLarge,
+            e => Error::FatalDatabaseError(e.to_string()),
         }
     }
 }
 
-impl From<CommitError> for BlockstoreError {
+impl From<CommitError> for Error {
     fn from(e: CommitError) -> Self {
-        BlockstoreError::FatalDatabaseError(e.to_string())
+        Error::FatalDatabaseError(e.to_string())
     }
 }
 

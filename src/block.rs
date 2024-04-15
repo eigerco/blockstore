@@ -1,9 +1,8 @@
 use cid::CidGeneric;
-use thiserror::Error;
 
 /// Error returned when trying to compute new or parse existing CID. Note that errors here can be
 /// specific to particular [`Block`] impl, and don't necessarily indicate invalid CID in general.
-#[derive(Debug, Error, PartialEq)]
+#[derive(Debug, thiserror::Error, PartialEq)]
 pub enum CidError {
     /// Coded specified in CID is not supported in this context
     #[error("Invalid CID codec {0}")]

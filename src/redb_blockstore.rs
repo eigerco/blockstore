@@ -62,7 +62,7 @@ impl RedbBlockstore {
     /// Returns the raw [`redb::Database`].
     ///
     /// This is useful if you want to pass the database handle to any other
-    /// stores (e.g. [`blockstore`]).
+    /// stores.
     pub fn raw_db(&self) -> Arc<Database> {
         self.db.clone()
     }

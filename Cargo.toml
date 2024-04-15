@@ -6,7 +6,7 @@ license = "Apache-2.0"
 description = "An IPLD blockstore capable of holding arbitrary data indexed by CID"
 authors = ["Eiger <hello@eiger.co>"]
 homepage = "https://www.eiger.co"
-repository = "https://github.com/eigerco/lumina"
+repository = "https://github.com/eigerco/blockstore"
 readme = "README.md"
 rust-version = "1.75"
 # crates.io is limited to 5 keywords and 5 categories
@@ -52,7 +52,9 @@ redb = ["dep:redb", "dep:tokio"]
 sled = ["dep:sled", "dep:tokio"]
 
 [package.metadata.docs.rs]
+all-features = true
 rustdoc-args = ["--cfg", "docs_rs"]
+targets = ["x86_64-unknown-linux-gnu", "wasm32-unknown-unknown"]
 
 [package.metadata.cargo-udeps.ignore]
 development = ["multihash-codetable"]

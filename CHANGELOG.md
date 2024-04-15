@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0](https://github.com/eigerco/blockstore/compare/v0.4.0...v0.5.0) - 2024-04-15
+
+### Added
+- [**breaking**] Rename `BlockstoreError` to `Error` ([#17](https://github.com/eigerco/blockstore/pull/17))
+- Implement `RedbBlockstore` ([#12](https://github.com/eigerco/blockstore/pull/12))
+- [**breaking**] Add `BlockstoreError::ValueTooLarge` ([#15](https://github.com/eigerco/blockstore/pull/15))
+- [**breaking**] Rename `BlockstoreError::CidTooLong` to `BlockstoreError::CidTooLarge` ([#14](https://github.com/eigerco/blockstore/pull/14))
+- [**breaking**] Refine error `BlockstoreError` variants ([#11](https://github.com/eigerco/blockstore/pull/11))
+
+### Other
+- Polish before release ([#16](https://github.com/eigerco/blockstore/pull/16))
+
 ## [0.4.0](https://github.com/eigerco/blockstore/compare/v0.3.0...v0.4.0) - 2024-04-03
 
 ### Other

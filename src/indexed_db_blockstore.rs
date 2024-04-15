@@ -10,7 +10,9 @@ const DB_VERSION: u32 = 1;
 
 const BLOCK_STORE: &str = "BLOCKSTORE.BLOCKS";
 
-/// A [`Blockstore`] implementation backed by an `IndexedDb` database.
+/// A [`Blockstore`] implementation backed by an [IndexedDB] database.
+///
+/// [IndexedDB]: https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB
 #[derive(Debug)]
 pub struct IndexedDbBlockstore {
     db: Rexie,

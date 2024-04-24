@@ -83,6 +83,19 @@ impl Blockstore for IndexedDbBlockstore {
         Ok(())
     }
 
+    async fn remove<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<()> {
+        let cid = Uint8Array::from(cid.to_bytes().as_ref());
+
+        let tx = self
+            .db
+            .transaction(&[BLOCK_STORE], TransactionMode::ReadWrite)?;
+        let blocks = tx.store(BLOCK_STORE)?;
+
+        blocks.delete(&cid).await?;
+
+        Ok(())
+    }
+
     async fn has<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<bool> {
         let cid = Uint8Array::from(cid.to_bytes().as_ref());
 

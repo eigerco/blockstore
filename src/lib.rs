@@ -99,6 +99,11 @@ pub trait Blockstore: CondSync {
         data: &[u8],
     ) -> impl Future<Output = Result<()>> + CondSend;
 
+    fn remove<const S: usize>(
+        &self,
+        cid: &CidGeneric<S>,
+    ) -> impl Future<Output = Result<()>> + CondSend;
+
     /// Checks whether blockstore has block for provided CID
     fn has<const S: usize>(
         &self,
@@ -395,6 +400,47 @@ pub(crate) mod tests {
             let retrieved_block = store.get(&cid).await.unwrap().unwrap();
             assert_eq!(block.as_ref(), &retrieved_block);
         }
+    }
+
+    #[rstest]
+    #[case(new_in_memory::<64>())]
+    #[cfg_attr(feature = "lru", case(new_lru::<64>()))]
+    #[cfg_attr(all(not(target_arch = "wasm32"), feature = "redb"), case(new_redb()))]
+    #[cfg_attr(all(not(target_arch = "wasm32"), feature = "sled"), case(new_sled()))]
+    #[cfg_attr(
+        all(target_arch = "wasm32", feature = "indexeddb"),
+        case(new_indexeddb())
+    )]
+    #[self::test]
+    async fn test_remove<B: Blockstore>(
+        #[case]
+        #[future(awt)]
+        store: B,
+    ) {
+        let cid1 = cid_v1::<64>(b"1");
+        let cid2 = cid_v1::<64>(b"2");
+        let cid3 = cid_v1::<64>(b"3");
+
+        // Remove on a new store
+        store.remove(&cid1).await.unwrap();
+
+        store.put_keyed(&cid1, b"1").await.unwrap();
+        store.put_keyed(&cid2, b"2").await.unwrap();
+
+        let data1 = store.get(&cid1).await.unwrap().unwrap();
+        assert_eq!(&data1, b"1");
+
+        // Remove cid1
+        store.remove(&cid1).await.unwrap();
+        assert!(store.get(&cid1).await.unwrap().is_none());
+
+        // Remove a non-existent CIDs
+        store.remove(&cid1).await.unwrap();
+        store.remove(&cid3).await.unwrap();
+
+        // Make sure cid2 is still retrievable
+        let data2 = store.get(&cid2).await.unwrap().unwrap();
+        assert_eq!(&data2, b"2");
     }
 
     async fn new_in_memory<const S: usize>() -> InMemoryBlockstore<S> {

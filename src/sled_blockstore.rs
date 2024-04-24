@@ -66,6 +66,17 @@ impl SledBlockstore {
         .await?
     }
 
+    async fn remove<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<()> {
+        let inner = self.inner.clone();
+        let cid = cid.to_bytes();
+
+        spawn_blocking(move || {
+            inner.blocks.remove(cid)?;
+            Ok(())
+        })
+        .await?
+    }
+
     async fn has<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<bool> {
         let inner = self.inner.clone();
         let cid = cid.to_bytes();
@@ -81,6 +92,10 @@ impl Blockstore for SledBlockstore {
 
     async fn put_keyed<const S: usize>(&self, cid: &CidGeneric<S>, data: &[u8]) -> Result<()> {
         self.put(cid, data).await
+    }
+
+    async fn remove<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<()> {
+        self.remove(cid).await
     }
 
     async fn has<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<bool> {

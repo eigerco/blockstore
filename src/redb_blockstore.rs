@@ -142,6 +142,17 @@ impl Blockstore for RedbBlockstore {
         .await
     }
 
+    async fn remove<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<()> {
+        let cid = cid.to_bytes();
+
+        self.write_tx(move |tx| {
+            let mut blocks_table = tx.open_table(BLOCKS_TABLE)?;
+            blocks_table.remove(&cid[..])?;
+            Ok(())
+        })
+        .await
+    }
+
     async fn has<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<bool> {
         let cid = cid.to_bytes();
 

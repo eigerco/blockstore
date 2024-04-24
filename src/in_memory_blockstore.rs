@@ -29,6 +29,10 @@ impl<const MAX_MULTIHASH_SIZE: usize> InMemoryBlockstore<MAX_MULTIHASH_SIZE> {
     fn contains_cid(&self, cid: &CidGeneric<MAX_MULTIHASH_SIZE>) -> bool {
         self.map.contains_key(cid)
     }
+
+    fn remove_cid(&self, cid: &CidGeneric<MAX_MULTIHASH_SIZE>) {
+        self.map.remove(cid);
+    }
 }
 
 impl<const MAX_MULTIHASH_SIZE: usize> Blockstore for InMemoryBlockstore<MAX_MULTIHASH_SIZE> {
@@ -40,6 +44,12 @@ impl<const MAX_MULTIHASH_SIZE: usize> Blockstore for InMemoryBlockstore<MAX_MULT
     async fn put_keyed<const S: usize>(&self, cid: &CidGeneric<S>, data: &[u8]) -> Result<()> {
         let cid = convert_cid(cid)?;
         self.insert_cid(cid, data)
+    }
+
+    async fn remove<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<()> {
+        let cid = convert_cid(cid)?;
+        self.remove_cid(&cid);
+        Ok(())
     }
 
     async fn has<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<bool> {

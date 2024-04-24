@@ -37,6 +37,13 @@ impl<const MAX_MULTIHASH_SIZE: usize> Blockstore for LruBlockstore<MAX_MULTIHASH
         Ok(())
     }
 
+    async fn remove<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<()> {
+        let cid = convert_cid(cid)?;
+        let mut cache = self.cache.lock().expect("lock failed");
+        cache.pop(&cid);
+        Ok(())
+    }
+
     async fn has<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<bool> {
         let cid = convert_cid(cid)?;
         let cache = self.cache.lock().expect("lock failed");

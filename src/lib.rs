@@ -99,6 +99,7 @@ pub trait Blockstore: CondSync {
         data: &[u8],
     ) -> impl Future<Output = Result<()>> + CondSend;
 
+    /// Removes a CID and its data from the blockstore.
     fn remove<const S: usize>(
         &self,
         cid: &CidGeneric<S>,
@@ -123,7 +124,8 @@ pub trait Blockstore: CondSync {
         }
     }
 
-    /// Inserts multiple blocks into the blockstore computing their CID
+    /// Inserts multiple blocks into the blockstore computing their CID.
+    ///
     /// If CID computation, or insert itself fails, error is returned and subsequent items are also
     /// skipped.
     fn put_many<const S: usize, B, I>(

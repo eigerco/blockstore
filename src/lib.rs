@@ -1,4 +1,4 @@
-#![cfg_attr(docs_rs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![doc = include_str!("../README.md")]
 
 use std::future::Future;
@@ -24,16 +24,16 @@ mod sled_blockstore;
 
 pub use crate::in_memory_blockstore::InMemoryBlockstore;
 #[cfg(all(target_arch = "wasm32", feature = "indexeddb"))]
-#[cfg_attr(docs_rs, doc(cfg(all(target_arch = "wasm32", feature = "indexeddb"))))]
+#[cfg_attr(docsrs, doc(cfg(all(target_arch = "wasm32", feature = "indexeddb"))))]
 pub use crate::indexed_db_blockstore::IndexedDbBlockstore;
 #[cfg(feature = "lru")]
-#[cfg_attr(docs_rs, doc(cfg(feature = "lru")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "lru")))]
 pub use crate::lru_blockstore::LruBlockstore;
 #[cfg(all(not(target_arch = "wasm32"), feature = "redb"))]
-#[cfg_attr(docs_rs, doc(cfg(all(not(target_arch = "wasm32"), feature = "redb"))))]
+#[cfg_attr(docsrs, doc(cfg(all(not(target_arch = "wasm32"), feature = "redb"))))]
 pub use crate::redb_blockstore::RedbBlockstore;
 #[cfg(all(not(target_arch = "wasm32"), feature = "sled"))]
-#[cfg_attr(docs_rs, doc(cfg(all(not(target_arch = "wasm32"), feature = "sled"))))]
+#[cfg_attr(docsrs, doc(cfg(all(not(target_arch = "wasm32"), feature = "sled"))))]
 pub use crate::sled_blockstore::SledBlockstore;
 
 /// Error returned when performing operations on [`Blockstore`]

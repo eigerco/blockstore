@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0](https://github.com/eigerco/blockstore/compare/v0.5.0...v0.6.0) - 2024-05-20
+
+### Added
+- [**breaking**] Add `remove` method ([#18](https://github.com/eigerco/blockstore/pull/18))
+
+### Fixed
+- *(doc)* rename doc_cfg guard to docsrs, rust-lang/cargo[#13875](https://github.com/eigerco/blockstore/pull/13875) ([#20](https://github.com/eigerco/blockstore/pull/20))
+
 ## [0.5.0](https://github.com/eigerco/blockstore/compare/v0.4.0...v0.5.0) - 2024-04-15
 
 ### Added

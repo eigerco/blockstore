@@ -4,6 +4,7 @@ use dashmap::DashMap;
 use crate::{convert_cid, Blockstore, Result};
 
 /// Simple in-memory blockstore implementation.
+#[derive(Clone, Debug)]
 pub struct InMemoryBlockstore<const MAX_MULTIHASH_SIZE: usize> {
     map: DashMap<CidGeneric<MAX_MULTIHASH_SIZE>, Vec<u8>>,
 }
@@ -14,6 +15,16 @@ impl<const MAX_MULTIHASH_SIZE: usize> InMemoryBlockstore<MAX_MULTIHASH_SIZE> {
         InMemoryBlockstore {
             map: DashMap::new(),
         }
+    }
+
+    /// Get the number of elements in the blockstore
+    pub fn len(&self) -> usize {
+        self.map.len()
+    }
+
+    /// Check if the blockstore is empty
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     fn get_cid(&self, cid: &CidGeneric<MAX_MULTIHASH_SIZE>) -> Result<Option<Vec<u8>>> {

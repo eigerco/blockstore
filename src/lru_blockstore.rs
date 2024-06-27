@@ -6,6 +6,7 @@ use lru::LruCache;
 use crate::{convert_cid, Blockstore, Result};
 
 /// An LRU cached [`Blockstore`].
+#[derive(Debug)]
 pub struct LruBlockstore<const MAX_MULTIHASH_SIZE: usize> {
     cache: Mutex<LruCache<CidGeneric<MAX_MULTIHASH_SIZE>, Vec<u8>>>,
 }
@@ -16,6 +17,16 @@ impl<const MAX_MULTIHASH_SIZE: usize> LruBlockstore<MAX_MULTIHASH_SIZE> {
         LruBlockstore {
             cache: Mutex::new(LruCache::new(capacity)),
         }
+    }
+
+    /// Get the number of elements in the blockstore
+    pub fn len(&self) -> usize {
+        self.cache.lock().expect("lock failed").len()
+    }
+
+    /// Check if the blockstore is empty
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 

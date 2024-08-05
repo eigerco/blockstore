@@ -83,6 +83,24 @@ impl SledBlockstore {
 
         spawn_blocking(move || Ok(inner.blocks.contains_key(cid)?)).await?
     }
+
+    async fn retain<F>(&self, mut predicate: F) -> Result<()>
+    where
+        F: FnMut(&[u8]) -> bool + Send + 'static,
+    {
+        let inner = self.inner.clone();
+
+        spawn_blocking(move || {
+            for cid in inner.blocks.iter().keys() {
+                let cid = cid?;
+                if !predicate(cid.as_ref()) {
+                    inner.blocks.remove(cid)?;
+                }
+            }
+            Ok(())
+        })
+        .await?
+    }
 }
 
 impl Blockstore for SledBlockstore {
@@ -100,6 +118,13 @@ impl Blockstore for SledBlockstore {
 
     async fn has<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<bool> {
         self.has(cid).await
+    }
+
+    async fn retain<F>(&self, predicate: F) -> Result<()>
+    where
+        F: FnMut(&[u8]) -> bool + Send + 'static,
+    {
+        self.retain(predicate).await
     }
 }
 

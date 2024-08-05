@@ -105,6 +105,12 @@ pub trait Blockstore: CondSync {
         cid: &CidGeneric<S>,
     ) -> impl Future<Output = Result<()>> + CondSend;
 
+    /// Applies `predicate` to all key-value pairs. All blocks for which `predicate` evaluates to
+    /// `false` are removed.
+    fn retain<F>(&self, predicate: F) -> impl Future<Output = Result<()>> + CondSend
+    where
+        F: Fn(&[u8]) -> bool + CondSend + 'static;
+
     /// Checks whether blockstore has block for provided CID
     fn has<const S: usize>(
         &self,
@@ -443,6 +449,50 @@ pub(crate) mod tests {
         // Make sure cid2 is still retrievable
         let data2 = store.get(&cid2).await.unwrap().unwrap();
         assert_eq!(&data2, b"2");
+    }
+
+    #[rstest]
+    #[case(new_in_memory::<64>())]
+    #[cfg_attr(feature = "lru", case(new_lru::<64>()))]
+    #[cfg_attr(all(not(target_arch = "wasm32"), feature = "redb"), case(new_redb()))]
+    #[cfg_attr(all(not(target_arch = "wasm32"), feature = "sled"), case(new_sled()))]
+    #[cfg_attr(
+        all(target_arch = "wasm32", feature = "indexeddb"),
+        case(new_indexeddb())
+    )]
+    #[self::test]
+    async fn test_retain<B: Blockstore>(
+        #[case]
+        #[future(awt)]
+        store: B,
+    ) {
+        let cid1 = cid_v1::<64>(b"r0");
+        let cid2 = cid_v1::<64>(b"r1");
+        let cid3 = cid_v1::<64>(b"n0");
+        let cid4 = cid_v1::<64>(b"n1");
+
+        store.put_keyed(&cid1, b"1").await.unwrap();
+        store.put_keyed(&cid2, b"2").await.unwrap();
+        store.put_keyed(&cid3, b"3").await.unwrap();
+        store.put_keyed(&cid4, b"4").await.unwrap();
+
+        assert!(store.has(&cid1).await.unwrap());
+        assert!(store.has(&cid2).await.unwrap());
+        assert!(store.has(&cid3).await.unwrap());
+        assert!(store.has(&cid4).await.unwrap());
+
+        store
+            .retain(|cid_bytes| {
+                let cid = CidGeneric::<64>::try_from(cid_bytes).unwrap();
+                cid.hash().digest()[0] != b'r'
+            })
+            .await
+            .unwrap();
+
+        assert!(!store.has(&cid1).await.unwrap());
+        assert!(!store.has(&cid2).await.unwrap());
+        assert!(store.has(&cid3).await.unwrap());
+        assert!(store.has(&cid4).await.unwrap());
     }
 
     async fn new_in_memory<const S: usize>() -> InMemoryBlockstore<S> {

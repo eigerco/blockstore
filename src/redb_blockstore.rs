@@ -167,6 +167,19 @@ impl Blockstore for RedbBlockstore {
         })
         .await
     }
+
+    async fn retain<F>(&self, predicate: F) -> Result<()>
+    where
+        F: Fn(&[u8]) -> bool + Send + 'static,
+    {
+        self.write_tx(move |tx| {
+            let mut blocks_table = tx.open_table(BLOCKS_TABLE)?;
+            blocks_table.retain(|cid, _block| predicate(cid))?;
+
+            Ok(())
+        })
+        .await
+    }
 }
 
 impl From<TransactionError> for Error {

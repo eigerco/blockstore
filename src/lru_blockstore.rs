@@ -60,6 +60,23 @@ impl<const MAX_MULTIHASH_SIZE: usize> Blockstore for LruBlockstore<MAX_MULTIHASH
         let cache = self.cache.lock().expect("lock failed");
         Ok(cache.contains(&cid))
     }
+
+    async fn retain<F>(&self, predicate: F) -> Result<()>
+    where
+        F: Fn(&[u8]) -> bool + 'static,
+    {
+        let mut cache = self.cache.lock().expect("lock failed");
+        let to_remove = cache
+            .iter()
+            .filter(|(cid, _block)| !predicate(&cid.to_bytes()))
+            .map(|(cid, _block)| *cid)
+            .collect::<Vec<_>>();
+
+        for cid in &to_remove {
+            cache.pop(cid);
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]

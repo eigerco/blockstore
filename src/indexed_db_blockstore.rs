@@ -9,6 +9,7 @@ use crate::{Blockstore, Error, Result};
 const DB_VERSION: u32 = 1;
 
 const BLOCK_STORE: &str = "BLOCKSTORE.BLOCKS";
+const RETAIN_BATCH_SIZE: u32 = 1024;
 
 /// A [`Blockstore`] implementation backed by an [IndexedDB] database.
 ///
@@ -103,6 +104,42 @@ impl Blockstore for IndexedDbBlockstore {
         let blocks = tx.store(BLOCK_STORE)?;
 
         has_key(&blocks, &cid).await
+    }
+
+    async fn retain<F>(&self, predicate: F) -> Result<()>
+    where
+        F: Fn(&[u8]) -> bool + 'static,
+    {
+        let tx = self
+            .db
+            .transaction(&[BLOCK_STORE], TransactionMode::ReadWrite)?;
+        let blocks = tx.store(BLOCK_STORE)?;
+        let mut last_key = None;
+        loop {
+            let keys = blocks
+                .get_all_keys(
+                    last_key.map(|key| KeyRange::lower_bound(&key, Some(true))).transpose()?,
+                    Some(RETAIN_BATCH_SIZE),
+                )
+                .await?;
+            last_key = keys.last().cloned();
+            let count = keys.len();
+
+            for key in keys {
+                let cid = Uint8Array::from(key);
+                // TODO: can this copy be elided?
+                if !predicate(cid.to_vec().as_ref()) {
+                    blocks.delete(cid.into()).await?;
+                }
+            }
+
+            if count < RETAIN_BATCH_SIZE as usize {
+                break;
+            }
+        }
+
+        tx.commit().await?;
+        Ok(())
     }
 }
 

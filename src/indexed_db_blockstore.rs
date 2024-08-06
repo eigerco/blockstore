@@ -1,5 +1,5 @@
 use cid::CidGeneric;
-use js_sys::Uint8Array;
+use js_sys::{ArrayBuffer, Uint8Array};
 use rexie::{KeyRange, ObjectStore, Rexie, Store, TransactionMode};
 use wasm_bindgen::{JsCast, JsValue};
 
@@ -118,7 +118,9 @@ impl Blockstore for IndexedDbBlockstore {
         loop {
             let keys = blocks
                 .get_all_keys(
-                    last_key.map(|key| KeyRange::lower_bound(&key, Some(true))).transpose()?,
+                    last_key
+                        .map(|key| KeyRange::lower_bound(&key, Some(true)))
+                        .transpose()?,
                     Some(RETAIN_BATCH_SIZE),
                 )
                 .await?;
@@ -126,7 +128,7 @@ impl Blockstore for IndexedDbBlockstore {
             let count = keys.len();
 
             for key in keys {
-                let cid = Uint8Array::from(key);
+                let cid = Uint8Array::new(&ArrayBuffer::from(key).into());
                 // TODO: can this copy be elided?
                 if !predicate(cid.to_vec().as_ref()) {
                     blocks.delete(cid.into()).await?;

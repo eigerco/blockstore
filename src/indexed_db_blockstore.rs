@@ -50,22 +50,20 @@ impl Blockstore for IndexedDbBlockstore {
             .db
             .transaction(&[BLOCK_STORE], TransactionMode::ReadOnly)?;
         let blocks = tx.store(BLOCK_STORE)?;
-        let block = blocks.get(&cid).await?;
+        let Some(block) = blocks.get(cid.into()).await? else {
+            return Ok(None);
+        };
 
-        if block.is_undefined() {
-            Ok(None)
-        } else {
-            let arr = block.dyn_ref::<Uint8Array>().ok_or_else(|| {
-                Error::StoredDataError(format!(
-                    "expected 'Uint8Array', got '{}'",
-                    block
-                        .js_typeof()
-                        .as_string()
-                        .expect("typeof must be a string")
-                ))
-            })?;
-            Ok(Some(arr.to_vec()))
-        }
+        let arr = block.dyn_ref::<Uint8Array>().ok_or_else(|| {
+            Error::StoredDataError(format!(
+                "expected 'Uint8Array', got '{}'",
+                block
+                    .js_typeof()
+                    .as_string()
+                    .expect("typeof must be a string")
+            ))
+        })?;
+        Ok(Some(arr.to_vec()))
     }
 
     async fn put_keyed<const S: usize>(&self, cid: &CidGeneric<S>, data: &[u8]) -> Result<()> {
@@ -91,7 +89,7 @@ impl Blockstore for IndexedDbBlockstore {
             .transaction(&[BLOCK_STORE], TransactionMode::ReadWrite)?;
         let blocks = tx.store(BLOCK_STORE)?;
 
-        blocks.delete(&cid).await?;
+        blocks.delete(cid.into()).await?;
 
         Ok(())
     }
@@ -114,9 +112,15 @@ impl From<rexie::Error> for Error {
     }
 }
 
+impl From<idb::Error> for Error {
+    fn from(value: idb::Error) -> Self {
+        Error::FatalDatabaseError(value.to_string())
+    }
+}
+
 async fn has_key(store: &Store, key: &JsValue) -> Result<bool> {
     let key_range = KeyRange::only(key)?;
-    let count = store.count(Some(&key_range)).await?;
+    let count = store.count(Some(key_range)).await?;
     Ok(count > 0)
 }
 

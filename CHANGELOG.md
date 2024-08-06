@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1](https://github.com/eigerco/blockstore/compare/v0.6.0...v0.6.1) - 2024-08-06
+
+### Other
+- Update rexie and other misc dependencies ([#24](https://github.com/eigerco/blockstore/pull/24))
+
 ## [0.6.0](https://github.com/eigerco/blockstore/compare/v0.5.0...v0.6.0) - 2024-06-27
 
 ### Added

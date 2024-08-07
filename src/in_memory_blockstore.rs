@@ -44,6 +44,13 @@ impl<const MAX_MULTIHASH_SIZE: usize> InMemoryBlockstore<MAX_MULTIHASH_SIZE> {
     fn remove_cid(&self, cid: &CidGeneric<MAX_MULTIHASH_SIZE>) {
         self.map.remove(cid);
     }
+
+    fn retain<F>(&self, mut predicate: F)
+    where
+        F: FnMut(&[u8]) -> bool,
+    {
+        self.map.retain(|cid, _block| predicate(&cid.to_bytes()));
+    }
 }
 
 impl<const MAX_MULTIHASH_SIZE: usize> Blockstore for InMemoryBlockstore<MAX_MULTIHASH_SIZE> {
@@ -66,6 +73,14 @@ impl<const MAX_MULTIHASH_SIZE: usize> Blockstore for InMemoryBlockstore<MAX_MULT
     async fn has<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<bool> {
         let cid = convert_cid(cid)?;
         Ok(self.contains_cid(&cid))
+    }
+
+    async fn retain<F>(&self, predicate: F) -> Result<()>
+    where
+        F: FnMut(&[u8]) -> bool,
+    {
+        self.retain(predicate);
+        Ok(())
     }
 }
 

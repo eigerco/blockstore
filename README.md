@@ -41,3 +41,19 @@ tokio::runtime::Builder::new_current_thread()
     .unwrap()
     .block_on(put_and_get());
 ```
+
+## Contributing
+
+We welcome contributions! Please fork the repository and submit a pull request.
+
+## License
+
+Blockstore is licensed under the Apache 2.0 License. See the [LICENSE](./LICENSE) file for more details.
+
+## About [Eiger](https://www.eiger.co)
+
+We are engineers. We contribute to various ecosystems by building low level implementations and core components.
+
+Contact us at hello@eiger.co
+Follow us on [X/Twitter](https://x.com/eiger_co)
+

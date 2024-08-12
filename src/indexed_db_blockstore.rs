@@ -73,12 +73,25 @@ impl Blockstore for IndexedDbBlockstore {
         let tx = self
             .db
             .transaction(&[BLOCK_STORE], TransactionMode::ReadWrite)?;
-        let blocks = tx.store(BLOCK_STORE)?;
 
-        if !has_key(&blocks, &cid).await? {
-            blocks.add(&data, Some(&cid)).await?;
+        let res = async {
+            let blocks = tx.store(BLOCK_STORE)?;
+
+            if !has_key(&blocks, &cid).await? {
+                blocks.add(&data, Some(&cid)).await?;
+            }
+
+            Ok(())
         }
-        Ok(())
+        .await;
+
+        if res.is_ok() {
+            tx.commit().await?;
+        } else {
+            tx.abort().await?;
+        }
+
+        res
     }
 
     async fn remove<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<()> {
@@ -87,11 +100,21 @@ impl Blockstore for IndexedDbBlockstore {
         let tx = self
             .db
             .transaction(&[BLOCK_STORE], TransactionMode::ReadWrite)?;
-        let blocks = tx.store(BLOCK_STORE)?;
 
-        blocks.delete(cid.into()).await?;
+        let res = async {
+            let blocks = tx.store(BLOCK_STORE)?;
+            blocks.delete(cid.into()).await?;
+            Ok(())
+        }
+        .await;
 
-        Ok(())
+        if res.is_ok() {
+            tx.commit().await?;
+        } else {
+            tx.abort().await?;
+        }
+
+        res
     }
 
     async fn has<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<bool> {

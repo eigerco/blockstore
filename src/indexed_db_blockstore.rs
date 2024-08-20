@@ -135,12 +135,6 @@ impl From<rexie::Error> for Error {
     }
 }
 
-impl From<idb::Error> for Error {
-    fn from(value: idb::Error) -> Self {
-        Error::FatalDatabaseError(value.to_string())
-    }
-}
-
 async fn has_key(store: &Store, key: &JsValue) -> Result<bool> {
     let key_range = KeyRange::only(key)?;
     let count = store.count(Some(key_range)).await?;

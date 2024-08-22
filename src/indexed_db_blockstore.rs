@@ -136,7 +136,7 @@ impl From<rexie::Error> for Error {
 }
 
 async fn has_key(store: &Store, key: &JsValue) -> Result<bool> {
-    let key_range = KeyRange::only(key)?;
+    let key_range = KeyRange::only(key).map_err(rexie::Error::IdbError)?;
     let count = store.count(Some(key_range)).await?;
     Ok(count > 0)
 }

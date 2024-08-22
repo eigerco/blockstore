@@ -46,7 +46,7 @@ multihash-codetable = { version = "0.1.1", features = ["digest", "sha2"] }
 wasm-bindgen-test = "0.3.41"
 
 [features]
-indexeddb = ["dep:js-sys", "dep:rexie", "dep:wasm-bindgen", "dep:idb"]
+indexeddb = ["dep:js-sys", "dep:rexie", "dep:wasm-bindgen"]
 lru = ["dep:lru"]
 redb = ["dep:redb", "dep:tokio"]
 sled = ["dep:sled", "dep:tokio"]

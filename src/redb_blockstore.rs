@@ -8,6 +8,7 @@ use redb::{
 };
 use tokio::task::spawn_blocking;
 
+use crate::counter::Counter;
 use crate::{Blockstore, Error, Result};
 
 const BLOCKS_TABLE: TableDefinition<'static, &[u8], &[u8]> =
@@ -17,6 +18,7 @@ const BLOCKS_TABLE: TableDefinition<'static, &[u8], &[u8]> =
 #[derive(Debug)]
 pub struct RedbBlockstore {
     db: Arc<Database>,
+    task_counter: Counter,
 }
 
 impl RedbBlockstore {
@@ -56,7 +58,10 @@ impl RedbBlockstore {
     /// # }
     /// ```
     pub fn new(db: Arc<Database>) -> Self {
-        RedbBlockstore { db }
+        RedbBlockstore {
+            db,
+            task_counter: Counter::new(),
+        }
     }
 
     /// Returns the raw [`redb::Database`].
@@ -74,10 +79,16 @@ impl RedbBlockstore {
         T: Send + 'static,
     {
         let db = self.db.clone();
+        let guard = self.task_counter.guard();
 
-        spawn_blocking(move || {
-            let mut tx = db.begin_read()?;
-            f(&mut tx)
+        tokio::task::spawn_blocking(move || {
+            let _guard = guard;
+
+            {
+                let db = db;
+                let mut tx = db.begin_read()?;
+                f(&mut tx)
+            }
         })
         .await?
     }
@@ -91,18 +102,24 @@ impl RedbBlockstore {
         T: Send + 'static,
     {
         let db = self.db.clone();
+        let guard = self.task_counter.guard();
 
-        spawn_blocking(move || {
-            let mut tx = db.begin_write()?;
-            let res = f(&mut tx);
+        tokio::task::spawn_blocking(move || {
+            let _guard = guard;
 
-            if res.is_ok() {
-                tx.commit()?;
-            } else {
-                tx.abort()?;
+            {
+                let db = db;
+                let mut tx = db.begin_write()?;
+                let res = f(&mut tx);
+
+                if res.is_ok() {
+                    tx.commit()?;
+                } else {
+                    tx.abort()?;
+                }
+
+                res
             }
-
-            res
         })
         .await?
     }
@@ -166,6 +183,12 @@ impl Blockstore for RedbBlockstore {
             Ok(blocks_table.get(&cid[..])?.is_some())
         })
         .await
+    }
+
+    async fn close(mut self) -> Result<()> {
+        // Wait all ongoing `spawn_blocking` tasks to finish.
+        self.task_counter.wait_guards().await;
+        Ok(())
     }
 }
 

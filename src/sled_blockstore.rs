@@ -2,8 +2,9 @@ use std::sync::Arc;
 
 use cid::CidGeneric;
 use sled::{Db, Error as SledError, Tree};
-use tokio::task::spawn_blocking;
+use tokio::task::{spawn_blocking, JoinHandle};
 
+use crate::counter::Counter;
 use crate::{Blockstore, Error, Result};
 
 const BLOCKS_TREE_ID: &[u8] = b"BLOCKSTORE.BLOCKS";
@@ -12,6 +13,7 @@ const BLOCKS_TREE_ID: &[u8] = b"BLOCKSTORE.BLOCKS";
 #[derive(Debug)]
 pub struct SledBlockstore {
     inner: Arc<Inner>,
+    task_counter: Counter,
 }
 
 #[derive(Debug)]
@@ -21,6 +23,19 @@ struct Inner {
 }
 
 impl SledBlockstore {
+    fn spawn_blocking<F, R>(&self, f: F) -> JoinHandle<R>
+    where
+        F: FnOnce() -> R + Send + 'static,
+        R: Send + 'static,
+    {
+        let guard = self.task_counter.guard();
+
+        spawn_blocking(move || {
+            let _guard = guard;
+            f()
+        })
+    }
+
     /// Create or open a [`SledBlockstore`] in a given sled [`Db`].
     ///
     /// # Example
@@ -40,6 +55,7 @@ impl SledBlockstore {
 
             Ok(Self {
                 inner: Arc::new(Inner { _db: db, blocks }),
+                task_counter: Counter::new(),
             })
         })
         .await?
@@ -49,7 +65,8 @@ impl SledBlockstore {
         let inner = self.inner.clone();
         let cid = cid.to_bytes();
 
-        spawn_blocking(move || Ok(inner.blocks.get(cid)?.map(|bytes| bytes.to_vec()))).await?
+        self.spawn_blocking(move || Ok(inner.blocks.get(cid)?.map(|bytes| bytes.to_vec())))
+            .await?
     }
 
     async fn put<const S: usize>(&self, cid: &CidGeneric<S>, data: &[u8]) -> Result<()> {
@@ -57,7 +74,7 @@ impl SledBlockstore {
         let cid = cid.to_bytes();
         let data = data.to_vec();
 
-        spawn_blocking(move || {
+        self.spawn_blocking(move || {
             let _ = inner
                 .blocks
                 .compare_and_swap(cid, None as Option<&[u8]>, Some(data))?;
@@ -70,7 +87,7 @@ impl SledBlockstore {
         let inner = self.inner.clone();
         let cid = cid.to_bytes();
 
-        spawn_blocking(move || {
+        self.spawn_blocking(move || {
             inner.blocks.remove(cid)?;
             Ok(())
         })
@@ -81,7 +98,8 @@ impl SledBlockstore {
         let inner = self.inner.clone();
         let cid = cid.to_bytes();
 
-        spawn_blocking(move || Ok(inner.blocks.contains_key(cid)?)).await?
+        self.spawn_blocking(move || Ok(inner.blocks.contains_key(cid)?))
+            .await?
     }
 }
 
@@ -100,6 +118,12 @@ impl Blockstore for SledBlockstore {
 
     async fn has<const S: usize>(&self, cid: &CidGeneric<S>) -> Result<bool> {
         self.has(cid).await
+    }
+
+    async fn close(mut self) -> Result<()> {
+        // Wait all ongoing `spawn_blocking` tasks to finish.
+        self.task_counter.wait_guards().await;
+        Ok(())
     }
 }
 

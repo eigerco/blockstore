@@ -127,6 +127,11 @@ impl Blockstore for IndexedDbBlockstore {
 
         has_key(&blocks, &cid).await
     }
+
+    async fn close(self) -> Result<()> {
+        self.db.close();
+        Ok(())
+    }
 }
 
 impl From<rexie::Error> for Error {

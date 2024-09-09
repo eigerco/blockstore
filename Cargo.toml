@@ -27,7 +27,7 @@ redb = { version = "2", optional = true }
 # Those can be restored by migrating between versions:
 # https://docs.rs/sled/latest/sled/struct.Db.html#examples-1
 sled = { version = "0.34.7", optional = true }
-tokio = { version = "1.29.0", features = ["macros", "rt"], optional = true }
+tokio = { version = "1.29.0", features = ["macros", "rt", "sync"], optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 js-sys = { version = "0.3.68", optional = true }
@@ -36,7 +36,7 @@ wasm-bindgen = { version = "0.2.91", optional = true }
 
 [dev-dependencies]
 rstest = "0.22.0"
-tokio = { version = "1.29.0", features = ["macros", "rt"] }
+tokio = { version = "1.29.0", features = ["macros", "rt", "time"] }
 tempfile = "3.10"
 
 # doc-tests

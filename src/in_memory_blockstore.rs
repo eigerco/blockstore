@@ -67,6 +67,10 @@ impl<const MAX_MULTIHASH_SIZE: usize> Blockstore for InMemoryBlockstore<MAX_MULT
         let cid = convert_cid(cid)?;
         Ok(self.contains_cid(&cid))
     }
+
+    async fn close(self) -> Result<()> {
+        Ok(())
+    }
 }
 
 impl<const MAX_MULTIHASH_SIZE: usize> Default for InMemoryBlockstore<MAX_MULTIHASH_SIZE> {

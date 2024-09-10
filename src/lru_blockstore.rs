@@ -60,6 +60,10 @@ impl<const MAX_MULTIHASH_SIZE: usize> Blockstore for LruBlockstore<MAX_MULTIHASH
         let cache = self.cache.lock().expect("lock failed");
         Ok(cache.contains(&cid))
     }
+
+    async fn close(self) -> Result<()> {
+        Ok(())
+    }
 }
 
 #[cfg(test)]

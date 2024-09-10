@@ -22,6 +22,9 @@ mod redb_blockstore;
 #[cfg(all(not(target_arch = "wasm32"), feature = "sled"))]
 mod sled_blockstore;
 
+#[cfg(all(not(target_arch = "wasm32"), any(feature = "redb", feature = "sled")))]
+mod counter;
+
 pub use crate::in_memory_blockstore::InMemoryBlockstore;
 #[cfg(all(target_arch = "wasm32", feature = "indexeddb"))]
 #[cfg_attr(docsrs, doc(cfg(all(target_arch = "wasm32", feature = "indexeddb"))))]
@@ -164,6 +167,9 @@ pub trait Blockstore: CondSync {
             Ok(())
         }
     }
+
+    /// Close blockstore.
+    fn close(self) -> impl Future<Output = Result<()>> + CondSend;
 }
 
 pub(crate) fn convert_cid<const S: usize, const NEW_S: usize>(

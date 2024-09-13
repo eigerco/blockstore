@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0](https://github.com/eigerco/blockstore/compare/v0.6.1...v0.7.0) - 2024-09-10
+
+### Added
+
+- [**breaking**] Add `Blockstore::close` method ([#29](https://github.com/eigerco/blockstore/pull/29))
+
+### Fixed
+
+- Remove unneded idb dependency ([#30](https://github.com/eigerco/blockstore/pull/30))
+
 ## [0.6.1](https://github.com/eigerco/blockstore/compare/v0.6.0...v0.6.1) - 2024-08-13
 
 ### Fixed

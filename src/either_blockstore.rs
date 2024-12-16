@@ -17,7 +17,9 @@ where
     L: Blockstore,
     R: Blockstore,
 {
+    /// A value of type `L`.
     Left(L),
+    /// A value of type `R`.
     Right(R),
 }
 
@@ -26,6 +28,22 @@ where
     L: Blockstore,
     R: Blockstore,
 {
+    /// Returns true if value is the `Left` variant.
+    pub fn is_left(&self) -> bool {
+        match self {
+            EitherBlockstore::Left(_) => true,
+            EitherBlockstore::Right(_) => false,
+        }
+    }
+
+    /// Returns true if value is the `Right` variant.
+    pub fn is_right(&self) -> bool {
+        match self {
+            EitherBlockstore::Left(_) => false,
+            EitherBlockstore::Right(_) => true,
+        }
+    }
+
     /// Returns a reference of the left side of `EitherBlockstore<L, R>`.
     pub fn left(&self) -> Option<&L> {
         match self {

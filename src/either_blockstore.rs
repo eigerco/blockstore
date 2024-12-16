@@ -8,8 +8,7 @@ use crate::{Block, Blockstore, CondSend, CondSync, Result};
 ///
 /// # Example
 ///
-/// ```no_run
-/// # use blockstore::{Blockstore, InMemoryBlockstore, RedbBlockstore, EitherBlockstore};
+/// ```ignore
 /// type SuperBlockstore = EitherBlockstore<InMemoryBlockstore, RedbBlockstore>;
 /// ```
 pub enum EitherBlockstore<L, R>

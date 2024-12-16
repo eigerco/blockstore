@@ -9,7 +9,7 @@ use crate::{Block, Blockstore, CondSend, CondSync, Result};
 /// # Example
 ///
 /// ```ignore
-/// type SuperBlockstore = EitherBlockstore<InMemoryBlockstore, RedbBlockstore>;
+/// type SuperBlockstore = EitherBlockstore<InMemoryBlockstore<64>, RedbBlockstore>;
 /// ```
 pub enum EitherBlockstore<L, R>
 where

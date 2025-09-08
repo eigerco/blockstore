@@ -158,3 +158,23 @@ jobs:
 
     - name: Check MSRV
       run: cargo msrv verify --all-features
+
+
+  required:
+    runs-on: ubuntu-latest
+    name: Required checks
+    if: ${{ !cancelled() }}
+    needs:
+    - clippy
+    - docs
+    - fmt
+    - test-wasm
+    - test
+    - unused-deps
+    - minimal-versions
+    - msrv
+
+    steps:
+    - name: On failure
+      if: always() && contains(needs.*.result, 'failure')
+      run: exit 1

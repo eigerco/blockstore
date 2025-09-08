@@ -152,7 +152,7 @@ mod tests {
     async fn store_persists() {
         let path = tempfile::TempDir::with_prefix("sled-blockstore-test")
             .unwrap()
-            .into_path();
+            .keep();
 
         let store = new_sled_blockstore(&path).await;
         let cid = cid_v1::<64>(b"1");

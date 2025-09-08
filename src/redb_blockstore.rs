@@ -242,7 +242,7 @@ mod tests {
     async fn store_persists() {
         let dir = tempfile::TempDir::with_prefix("redb-blockstore-test")
             .unwrap()
-            .into_path();
+            .keep();
         let db_path = dir.join("db");
 
         let store = RedbBlockstore::open(&db_path).await.unwrap();

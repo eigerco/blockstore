@@ -139,7 +139,7 @@ jobs:
         tool: cargo-hack,cargo-minimal-versions
 
     - name: Check minimal versions
-      run: cargo minimal-versions check --direct
+      run: cargo minimal-versions check --direct --all-features
 
 
   msrv:

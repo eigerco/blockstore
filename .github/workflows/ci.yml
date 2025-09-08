@@ -10,40 +10,48 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
 
-    - name: Install wasm Rust
-      uses: actions-rs/toolchain@v1
+    - name: Setup toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
-        toolchain: stable
         components: clippy
         target: wasm32-unknown-unknown
+        rustflags: -D warnings -D missing-docs
 
-    - name: Run clippy for native
-      run: cargo clippy --all-targets --all-features -- -D warnings -D missing-docs
+    - name: Run clippy
+      run: cargo clippy --all-targets --all-features
 
     - name: Run clippy for wasm32
-      run: cargo clippy --all-targets --all-features --target=wasm32-unknown-unknown -- -D warnings -D missing-docs
+      run: cargo clippy --all-targets --all-features --target=wasm32-unknown-unknown
 
 
   docs:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
 
-    - name: Install toolchain
-      uses: dtolnay/rust-toolchain@nightly
+    - name: Setup toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        rustflags: -D missing-docs
 
     - name: Run rustdoc check
       env:
-        RUSTDOCFLAGS: --cfg docs_rs -D warnings
-      run: cargo +nightly doc
+        RUSTDOCFLAGS: -D warnings
+      run: cargo doc
 
 
   fmt:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
+
+    - name: Setup toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        components: rustfmt
+
     - name: Run fmt
       run: cargo fmt -- --check
 
@@ -53,18 +61,17 @@ jobs:
     env:
       WASM_BINDGEN_TEST_TIMEOUT: 60
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
 
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
+    - name: Setup toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
-        toolchain: stable
         target: wasm32-unknown-unknown
 
     - name: Install wasm-pack
-      uses: taiki-e/cache-cargo-install-action@v1
+      uses: taiki-e/install-action@v2
       with:
-        tool: wasm-pack@0.12.1
+        tool: wasm-pack@0.13.1
 
     - name: Install chromedriver # we don't specify chrome version to match whatever's installed
       uses: nanasess/setup-chromedriver@v2
@@ -79,26 +86,15 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
+
+    - name: Setup toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@v1
 
     - name: Install cargo-hack
-      uses: taiki-e/cache-cargo-install-action@v1
+      uses: taiki-e/install-action@v2
       with:
         tool: cargo-hack
-
-    - name: Set up cargo cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys:
-          cargo-${{ hashFiles('**/Cargo.lock') }}
-          cargo-
 
     - name: Build (native)
       run: cargo hack build --feature-powerset --no-dev-deps --exclude-features indexeddb
@@ -112,15 +108,53 @@ jobs:
     name: unused dependencies
     steps:
     - name: Checkout sources
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
-    - name: Install toolchain
-      uses: dtolnay/rust-toolchain@nightly
+    - name: Setup toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+      with:
+        toolchain: nightly
 
     - name: Install cargo-udeps
-      uses: taiki-e/cache-cargo-install-action@v1
+      uses: taiki-e/install-action@v2
       with:
-        tool: cargo-udeps@0.1
+        tool: cargo-udeps
 
     - name: Check for unused dependencies
-      run: cargo +nightly udeps --all-features --all-targets
+      run: cargo udeps --all-targets --all-features
+
+
+  minimal-versions:
+    runs-on: ubuntu-latest
+    name: test (minimal versions)
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+
+    - name: Install cargo-minimal-versions
+      uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-hack,cargo-minimal-versions
+
+    - name: Check minimal versions
+      run: cargo minimal-versions check --direct
+
+
+  msrv:
+    runs-on: ubuntu-latest
+    name: Check minimum supported rust version
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+
+    - name: Install cargo-minimal-versions
+      uses: taiki-e/install-action@v2
+      with:
+        tool: cargo-msrv
+
+    - name: Check MSRV
+      run: cargo msrv verify --all-features

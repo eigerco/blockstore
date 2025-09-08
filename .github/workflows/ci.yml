@@ -126,7 +126,7 @@ jobs:
 
   minimal-versions:
     runs-on: ubuntu-latest
-    name: test (minimal versions)
+    name: minimal versions of dependencies
     steps:
     - uses: actions/checkout@v4
 
@@ -144,7 +144,7 @@ jobs:
 
   msrv:
     runs-on: ubuntu-latest
-    name: Check minimum supported rust version
+    name: minimum supported rust version
     steps:
     - uses: actions/checkout@v4
 

@@ -471,7 +471,7 @@ pub(crate) mod tests {
     async fn new_sled() -> SledBlockstore {
         let path = tempfile::TempDir::with_prefix("sled-blockstore-test")
             .unwrap()
-            .into_path();
+            .keep();
 
         let db = tokio::task::spawn_blocking(move || {
             sled::Config::default()

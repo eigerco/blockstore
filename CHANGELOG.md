@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0](https://github.com/eigerco/blockstore/compare/v0.7.1...v0.8.0) - 2025-09-18
+
+### Added
+
+- [**breaking**] upgrade dependencies, update ci ([#35](https://github.com/eigerco/blockstore/pull/35))
+
+### Other
+
+- [**breaking**] bump msrv to 1.85, update lockfile ([#37](https://github.com/eigerco/blockstore/pull/37))
+
 ## [0.7.1](https://github.com/eigerco/blockstore/compare/v0.7.0...v0.7.1) - 2024-12-16
 
 ### Added

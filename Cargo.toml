@@ -8,7 +8,7 @@ authors = ["Eiger <hello@eiger.co>"]
 homepage = "https://www.eiger.co"
 repository = "https://github.com/eigerco/blockstore"
 readme = "README.md"
-rust-version = "1.75"
+rust-version = "1.85"
 # crates.io is limited to 5 keywords and 5 categories
 keywords = ["bitswap", "blockstore", "ipld", "cid"]
 # Must be one of <https://crates.io/category_slugs>
